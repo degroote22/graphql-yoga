@@ -164,9 +164,7 @@ export class GraphQLServer {
     return this
   }
 
-  createHttpServer(options: OptionsWithoutHttps): HttpServer
-  createHttpServer(options: OptionsWithHttps): HttpsServer
-  createHttpServer(options: Options): HttpServer | HttpsServer {
+  createExpressApplication(options: Options): express.Application {
     const app = this.express
 
     this.options = { ...this.options, ...options }
@@ -352,6 +350,13 @@ export class GraphQLServer {
       throw new Error('No schema defined')
     }
 
+    return app
+  }
+
+  createHttpServer(options: OptionsWithoutHttps): HttpServer
+  createHttpServer(options: OptionsWithHttps): HttpsServer
+  createHttpServer(options: Options): HttpServer | HttpsServer {
+    const app = this.createExpressApplication(options)
     const server = this.options.https
       ? createHttpsServer(this.options.https, app)
       : createServer(app)
@@ -365,14 +370,14 @@ export class GraphQLServer {
 
   start(
     options: Options,
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer>
   start(
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer>
   start(
     optionsOrCallback?: Options | ((options: Options) => void),
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer> {
     const options =
       optionsOrCallback && typeof optionsOrCallback === 'function'
@@ -381,8 +386,8 @@ export class GraphQLServer {
     const callbackFunc = callback
       ? callback
       : optionsOrCallback && typeof optionsOrCallback === 'function'
-        ? optionsOrCallback
-        : () => null
+      ? optionsOrCallback
+      : () => null
 
     const server = this.createHttpServer(options as Options)
 
